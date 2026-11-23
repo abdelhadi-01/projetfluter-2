@@ -1,43 +1,52 @@
-
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
-
-  LoginPage({super.key});
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  final TextEditingController _passwordController =
-      TextEditingController();
-      final ValueNotifier<bool> _passwordVisible = ValueNotifier<bool>(false);
+  final _formKey = GlobalKey<FormState>();
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
+  bool _passwordVisible = false;
+
+  String? _emailValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
       return 'Please enter your email';
     }
 
     final emailPattern = r'^[^@]+@[^@]+\.[^@]+$';
     final regexp = RegExp(emailPattern);
 
-    if (!regexp.hasMatch(value)) {
-      return 'Enter a valid Email';
+    if (!regexp.hasMatch(value.trim())) {
+      return 'Enter a valid email address';
     }
 
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _passwordValidator(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your password';
     }
 
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters long';
+    }
+
     return null;
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -47,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
         centerTitle: true,
         backgroundColor: Colors.purple,
         title: const Text(
-          "Login Page",
+          'Login Page',
           style: TextStyle(
             color: Colors.white,
             fontSize: 30,
@@ -55,11 +64,11 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Form(
+            key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,15 +76,16 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 60),
 
                 Image.asset(
-                  "images/avatare.png",
+                  'images/avatare.png',
                   width: 80,
                   height: 80,
+                  fit: BoxFit.contain,
                 ),
 
                 const SizedBox(height: 20),
 
                 const Text(
-                  "Welcome back !",
+                  'Welcome back !',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.purple,
@@ -89,86 +99,94 @@ class _LoginPageState extends State<LoginPage> {
                 // Email
                 TextFormField(
                   controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    labelText: "Email",
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    prefixIcon: const Icon(Icons.email),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: _validateEmail,
+                  validator: _emailValidator,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                
-ValueListenableBuilder<bool>(
-  valueListenable: _passwordVisible,
-  builder: (context, passwordVisible, child) {
-    return TextFormField(
-      controller: _passwordController,
-      obscureText: !passwordVisible,
-      decoration: InputDecoration(
-        labelText: "Password",
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        prefixIcon: const Icon(Icons.lock),
-        suffixIcon: IconButton(
-          onPressed: () {
-            _passwordVisible.value = !_passwordVisible.value;
-          },
-          icon: Icon(
-            passwordVisible
-                ? Icons.visibility
-                : Icons.visibility_off,
-          ),
-        ),
-      ),
-      validator: _validatePassword,
-    );
-  },
-),
+                // Password
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: !_passwordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _passwordVisible = !_passwordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        _passwordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                    ),
+                  ),
+                  validator: _passwordValidator,
+                ),
 
+                const SizedBox(height: 20),
 
-                const SizedBox(height: 30),
-
-                // Login Button
+                // Login button
                 ElevatedButton(
                   onPressed: () {
-                    final emailError =
-                        _validateEmail(_emailController.text);
-
-                    final passwordError =
-                        _validatePassword(_passwordController.text);
-
-                    if (emailError != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(emailError)),
-                      );
-                    } else if (passwordError != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(passwordError)),
-                      );
-                    } else {
+                    if (_formKey.currentState!.validate()) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text("Formulaire valide"),
+                          content: Text('Login successful'),
                         ),
                       );
+
+                      // Décommente si la route '/home' est configurée.
+                      Navigator.pushNamed(context, '/home');
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
+                    backgroundColor: const Color.fromARGB(255, 160, 19, 189),
+                    foregroundColor: Colors.white,
                   ),
                   child: const Text(
-                    "Login",
-                    style: TextStyle(fontSize: 20),
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                
+                SizedBox(
+                  height: 20,
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/register');
+                  },
+                  child: const Text(
+                    "Don't have an account? Register",
+                    style: TextStyle(
+                      color: Colors.purple,
+                      fontSize: 16,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ],
